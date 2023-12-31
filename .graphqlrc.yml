@@ -1,0 +1,3 @@
+schema: 'schema/rustc_hir_schema.gql'
+documents: 'queries/**/*.gql'
+

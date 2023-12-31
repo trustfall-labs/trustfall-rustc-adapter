@@ -1,0 +1,21 @@
+query {
+    Crate {
+        item {
+            ... on Fn {
+                body {
+                    value {
+                        statements {
+                            ... on LocalStatement {
+                                init {
+                                    type {
+                                        as_string
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

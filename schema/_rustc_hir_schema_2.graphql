@@ -1,0 +1,148 @@
+# this schema uses a modified GraphQL syntax where the fields of an interface a type
+# implements is implicitly part of the latter's body
+
+
+schema {
+  query: Query
+}
+
+"""
+TODO: How should we handle Map methods that have a real chance of panicking?
+
+https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/enum.Node.html
+https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/intravisit/trait.Map.html#tymethod.find
+"""
+interface Node {
+    # some (self, HirId) -> (HirId | Node)? methods on Map that I find to be general enough
+
+    # TODO: How should we handle HirIds? Do they have a canonical serializaion? 
+    # id: HirId
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.is_lhs
+    """
+    lhs: bool!
+    
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.get_return_block
+    """
+    return_block: Node
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.get_defining_scope
+    """
+    defining_scope: Node!
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.opt_ident
+    """
+    ident: Ident
+
+    """
+    NOTE: AFAIK there's no reason we shouldn't use this over opt_name
+
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.name
+    """
+    name: Symbol!
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.attrs
+    """
+    attrs: [Attribute!]!
+
+
+    """
+    TODO: what is the difference between "parent" and "parent item?"
+
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.find_parent
+    """
+    parent: Node
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.enclosing_body_owner
+    """
+    enclosing_body_owner: LocalDef!
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.is_inside_const_context
+    """
+    inside_const_context: bool!
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.get_enclosing_scope
+    """
+    enclosing_scope: Node
+
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.get_defining_scope
+    """
+    defining_scope: Node!
+
+    """
+    NOTE: AFAIK there's no reason we shouldn't use this over opt_span
+
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.span
+    """
+    span: Span!
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.span_with_body
+    """
+    span_with_body: Span!
+}
+
+type Item implements Node {
+    ident: Ident!,
+    owner: Node!,
+    vis_span: Span!,
+}
+
+type ExternCrate implements Item {}
+type Use implements Item {}
+type Static implements Item {}
+type Const implements Item {}
+type Fn implements Item {}
+type Macro implements Item {}
+type Mod implements Item {}
+type ForeignMod implements Item {}
+type GlobalAsm implements Item {}
+type TyAlias implements Item {}
+type OpaqueTy implements Item {}
+type Enum implements Item {}
+type Struct implements Item {}
+type Union implements Item {}
+type Trait implements Item {}
+type TraitAlias implements Item {}
+type Impl implements Item {}
+
+type Param implements Node {}
+type ForeignItem implements Node {}
+type TraitItem implements Node {}
+type ImplItem implements Node {}
+type Variant implements Node {}
+type Field implements Node {}
+type AnonConst implements Node {}
+type ConstBlock implements Node {}
+type Expr implements Node {}
+type ExprField implements Node {}
+type Stmt implements Node {}
+type PathSegment implements Node {}
+type Ty implements Node {}
+type TypeBinding implements Node {}
+type TraitRef implements Node {}
+type Pat implements Node {}
+type PatField implements Node {}
+type Arm implements Node {}
+type Block implements Node {}
+type Local implements Node {}
+type Ctor implements Node {}
+type Lifetime implements Node {}
+type GenericParam implements Node {}
+type Crate implements Node {}
+type Infer implements Node {}
+
+type Query {
+  items: [Item!]!
+  root_module: Mod!
+}
