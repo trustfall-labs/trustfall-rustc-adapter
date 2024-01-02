@@ -1,3 +1,5 @@
+use rustc_hir::{ItemId, HirId};
+
 #[non_exhaustive]
 #[derive(Debug, Clone, trustfall::provider::TrustfallEnumVertex)]
 pub enum Vertex {
@@ -7,9 +9,9 @@ pub enum Vertex {
     Expr(()),
     Fn(()),
     FnBody(()),
-    Item(()),
+    Item(ItemId),
     LocalStatement(()),
-    Node(()),
+    Node(HirId),
     Statement(()),
     Ty(()),
 }

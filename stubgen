@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-# TODO: Make this a cargo build script
-
-trustfall_stubgen --schema schema/rustc_hir_schema.gql --target src/

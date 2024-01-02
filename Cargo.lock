@@ -89,6 +89,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25db6b064527c5d482d0423354fcd07a89a2dfe07b67892e62411946db7f07b0"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -256,6 +265,7 @@ dependencies = [
 name = "trustfall-rustc-adapter"
 version = "0.1.0"
 dependencies = [
+ "itertools 0.12.0",
  "trustfall",
 ]
 
@@ -267,7 +277,7 @@ checksum = "4794de1ab6087b44c68bc3738021e95be3d51316bf57bbddc4d5bf1ca033b134"
 dependencies = [
  "async-graphql-parser",
  "async-graphql-value",
- "itertools",
+ "itertools 0.11.0",
  "maplit",
  "regex",
  "serde",

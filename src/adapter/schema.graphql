@@ -39,6 +39,7 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/enum.ItemKind.html
 """
 interface Item implements Node {
     parent: Node
+    ident: String!
 }
 
 """
@@ -47,6 +48,7 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/struct.FnSig.html
 """
 type Fn implements Item & Node {
     parent: Node
+    ident: String!
 
     body: FnBody!
 }

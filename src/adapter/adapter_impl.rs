@@ -1,14 +1,18 @@
 use std::sync::{Arc, OnceLock};
 
+use rustc_interface::Config;
 use trustfall::{FieldValue, Schema, provider::{AsVertex, ContextIterator, ContextOutcomeIterator, EdgeParameters, ResolveEdgeInfo, ResolveInfo, Typename, VertexIterator, resolve_coercion_using_schema, resolve_property_with}};
+
+use crate::compiler_config::CompilerConfig;
 
 use super::vertex::Vertex;
 
 static SCHEMA: OnceLock<Schema> = OnceLock::new();
 
 #[non_exhaustive]
-#[derive(Debug)]
-pub struct Adapter {}
+pub struct Adapter {
+    pub(crate) config: CompilerConfig
+}
 
 impl Adapter {
     pub const SCHEMA_TEXT: &'static str = include_str!("./schema.graphql");
@@ -20,12 +24,12 @@ impl Adapter {
             })
     }
 
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(config: CompilerConfig) -> Self {
+        Self { config: config }
     }
 }
 
-impl<'a> trustfall::provider::Adapter<'a> for Adapter {
+impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
     type Vertex = Vertex;
 
     fn resolve_starting_vertices(
@@ -55,6 +59,22 @@ impl<'a> trustfall::provider::Adapter<'a> for Adapter {
             return resolve_property_with(contexts, |vertex| vertex.typename().into());
         }
         match type_name.as_ref() {
+            "Fn" => {
+                super::properties::resolve_fn_property(
+                    contexts,
+                    property_name.as_ref(),
+                    resolve_info,
+                )
+            }
+            "Item" => {
+
+                super::properties::resolve_item_property(
+                    contexts,
+                    property_name.as_ref(),
+                    resolve_info,
+                    self,
+                )
+            }
             "Ty" => {
                 super::properties::resolve_ty_property(
                     contexts,
@@ -101,6 +121,7 @@ impl<'a> trustfall::provider::Adapter<'a> for Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "Expr" => {
@@ -174,6 +195,6 @@ impl<'a> trustfall::provider::Adapter<'a> for Adapter {
         coerce_to_type: &Arc<str>,
         _resolve_info: &ResolveInfo,
     ) -> ContextOutcomeIterator<'a, V, bool> {
-        resolve_coercion_using_schema(contexts, Self::schema(), coerce_to_type.as_ref())
+        resolve_coercion_using_schema(contexts, Adapter::schema(), coerce_to_type.as_ref())
     }
 }

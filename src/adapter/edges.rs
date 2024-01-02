@@ -1,6 +1,6 @@
 use trustfall::provider::{AsVertex, ContextIterator, ContextOutcomeIterator, EdgeParameters, ResolveEdgeInfo, VertexIterator};
 
-use super::vertex::Vertex;
+use super::{vertex::Vertex, Adapter};
 
 pub(super) fn resolve_block_edge<'a, V: AsVertex<Vertex> + 'a>(
     contexts: ContextIterator<'a, V>,
@@ -135,9 +135,10 @@ pub(super) fn resolve_crate_edge<'a, V: AsVertex<Vertex> + 'a>(
     edge_name: &str,
     parameters: &EdgeParameters,
     resolve_info: &ResolveEdgeInfo,
+    adapter: &'a Adapter,
 ) -> ContextOutcomeIterator<'a, V, VertexIterator<'a, Vertex>> {
     match edge_name {
-        "item" => crate_::item(contexts, resolve_info),
+        "item" => crate_::item(contexts, resolve_info, adapter),
         _ => {
             unreachable!(
                 "attempted to resolve unexpected edge '{edge_name}' on type 'Crate'"
@@ -147,24 +148,38 @@ pub(super) fn resolve_crate_edge<'a, V: AsVertex<Vertex> + 'a>(
 }
 
 mod crate_ {
+    use itertools::Itertools;
+    use rustc_interface::run_compiler;
     use trustfall::provider::{
         resolve_neighbors_with, AsVertex, ContextIterator, ContextOutcomeIterator,
         ResolveEdgeInfo, VertexIterator,
     };
+
+    use crate::adapter::Adapter;
 
     use super::super::vertex::Vertex;
 
     pub(super) fn item<'a, V: AsVertex<Vertex> + 'a>(
         contexts: ContextIterator<'a, V>,
         _resolve_info: &ResolveEdgeInfo,
+        adapter: &'a Adapter,
     ) -> ContextOutcomeIterator<'a, V, VertexIterator<'a, Vertex>> {
         resolve_neighbors_with(
             contexts,
             move |vertex| {
-                let vertex = vertex
+                let _ = vertex
                     .as_crate()
                     .expect("conversion failed, vertex was not a Crate");
-                todo!("get neighbors along edge 'item' for type 'Crate'")
+                let items = run_compiler((&adapter.config).clone().into(), move |compiler| {
+                    compiler.enter(move |queries| {
+                        queries.global_ctxt().unwrap().enter(move |ctxt| {
+                            let hir = ctxt.hir();
+                            hir.items().map(|id| Vertex::Item(id)).collect_vec()
+                        })
+                    })
+                });
+
+                Box::new(items.into_iter())
             },
         )
     }
