@@ -8,7 +8,7 @@ query {
                             ... on LocalStatement {
                                 init {
                                     type {
-                                        as_string
+                                        as_string @output
                                     }
                                 }
                             }

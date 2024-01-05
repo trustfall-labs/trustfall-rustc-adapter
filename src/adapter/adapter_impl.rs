@@ -1,6 +1,5 @@
 use std::sync::{Arc, OnceLock};
 
-use rustc_interface::Config;
 use trustfall::{FieldValue, Schema, provider::{AsVertex, ContextIterator, ContextOutcomeIterator, EdgeParameters, ResolveEdgeInfo, ResolveInfo, Typename, VertexIterator, resolve_coercion_using_schema, resolve_property_with}};
 
 use crate::compiler_config::CompilerConfig;
@@ -35,7 +34,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
     fn resolve_starting_vertices(
         &self,
         edge_name: &Arc<str>,
-        parameters: &EdgeParameters,
+        _parameters: &EdgeParameters,
         resolve_info: &ResolveInfo,
     ) -> VertexIterator<'a, Self::Vertex> {
         match edge_name.as_ref() {
@@ -64,10 +63,10 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     contexts,
                     property_name.as_ref(),
                     resolve_info,
+                    self,
                 )
             }
             "Item" => {
-
                 super::properties::resolve_item_property(
                     contexts,
                     property_name.as_ref(),
@@ -80,6 +79,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     contexts,
                     property_name.as_ref(),
                     resolve_info,
+                    self,
                 )
             }
             _ => {
@@ -105,6 +105,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "Body" => {
@@ -113,6 +114,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "Crate" => {
@@ -130,6 +132,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "Fn" => {
@@ -138,6 +141,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "FnBody" => {
@@ -146,6 +150,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "Item" => {
@@ -154,6 +159,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "LocalStatement" => {
@@ -162,6 +168,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "Node" => {
@@ -170,6 +177,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             "Statement" => {
@@ -178,6 +186,7 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     edge_name.as_ref(),
                     parameters,
                     resolve_info,
+                    self,
                 )
             }
             _ => {

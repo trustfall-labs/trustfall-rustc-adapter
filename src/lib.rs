@@ -13,3 +13,7 @@ extern crate rustc_span;
 mod adapter;
 mod util;
 mod compiler_config;
+
+pub use adapter::{Adapter, Vertex};
+pub use util::get_sysroot;
+pub use compiler_config::CompilerConfig;

@@ -1,5 +1,4 @@
 use rustc_hir::{ItemId, HirId, BodyId};
-use rustc_span::def_id::LocalDefId;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, trustfall::provider::TrustfallEnumVertex)]
@@ -14,7 +13,7 @@ pub enum Vertex {
     LocalStatement(HirId),
     Node(HirId),
     Statement(HirId),
-    Ty(LocalDefId, HirId),
+    Ty(HirId),
 }
 
 impl Vertex {
