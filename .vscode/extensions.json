@@ -1,0 +1,6 @@
+{
+	"recommendations": [
+		"graphql.vscode-graphql",
+		"rust-lang.rust-analyzer"
+	]
+}
