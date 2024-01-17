@@ -97,3 +97,35 @@ fn msrv_methods() {
         })
     });
 }
+
+#[test]
+/// Implements clippy's [`useless_conversion`](https://rust-lang.github.io/rust-clippy/rust-1.75.0/index.html#/useless_conversion)
+/// lint.
+fn useless_conversion() {
+    let config = CompilerConfig::new("main.rs", r#"fn main() {
+    let _: String = format!("hello").into();
+    let _: Option<i32> = Some(42).into();
+    let _: String = String::from(String::from(""));
+}"#);
+    run_compiler(config.into(), |compiler| {
+        compiler.enter(|queries| {
+            let adapter = Adapter::new(queries);
+            let schema = Adapter::schema();
+            let query = include_str!("./queries/useless_conversion.gql");
+            let mut variables = BTreeMap::<Arc<str>, FieldValue>::new();
+            // variables.insert("methods".into(), FieldValue::List([
+            //     FieldValue::String("std::convert::Into::into".into()),
+            //     FieldValue::String("std::convert::From::from".into()),
+            // ].into()));
+            let result = execute_query(
+                schema,
+                (&adapter).into(),
+                query,
+                variables,
+            )
+                .unwrap()
+                .collect_vec();
+            println!("{result:#?}");
+        })
+    });
+}

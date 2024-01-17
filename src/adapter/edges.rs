@@ -2,6 +2,19 @@ use trustfall::provider::{AsVertex, ContextIterator, ContextOutcomeIterator, Edg
 
 use super::{vertex::Vertex, Adapter};
 
+mod util {
+    use rustc_hir::{Expr, ExprKind};
+
+    use crate::Vertex;
+
+    pub(super) fn expr_to_vertex(ex: &Expr) -> Vertex {
+        match ex.kind {
+            ExprKind::MethodCall(..) => Vertex::MethodCall(ex.hir_id),
+            _ => Vertex::Expr(ex.hir_id),
+        }
+    }
+}
+
 pub(super) fn resolve_block_edge<'a, V: AsVertex<Vertex> + 'a>(
     contexts: ContextIterator<'a, V>,
     edge_name: &str,
@@ -166,7 +179,7 @@ pub(super) fn resolve_crate_edge<'a, V: AsVertex<Vertex> + 'a>(
 
 mod crate_ {
     use itertools::Itertools;
-    use rustc_hir::{ItemKind, intravisit::{Visitor, walk_expr}, ExprKind};
+    use rustc_hir::{ItemKind, intravisit::{Visitor, walk_expr}};
     use rustc_middle::hir::{nested_filter::OnlyBodies, map::Map};
     use trustfall::provider::{
         resolve_neighbors_with, AsVertex, ContextIterator, ContextOutcomeIterator,
@@ -175,7 +188,7 @@ mod crate_ {
 
     use crate::adapter::Adapter;
 
-    use super::super::vertex::Vertex;
+    use super::{super::vertex::Vertex, util::expr_to_vertex};
 
     pub(super) fn item<'a, V: AsVertex<Vertex> + 'a>(
         contexts: ContextIterator<'a, V>,
@@ -219,10 +232,7 @@ mod crate_ {
         }
 
         fn visit_expr(&mut self, ex: &'a rustc_hir::Expr<'a>) {
-            let vertex = match ex.kind {
-                ExprKind::MethodCall(..) => Vertex::MethodCall(ex.hir_id),
-                _ => Vertex::Expr(ex.hir_id),
-            };
+            let vertex = expr_to_vertex(ex);
             self.exprs.push(vertex);
             walk_expr(self, ex);
         }
@@ -605,6 +615,7 @@ pub(super) fn resolve_method_call_edge<'a, V: AsVertex<Vertex> + 'a>(
 ) -> ContextOutcomeIterator<'a, V, VertexIterator<'a, Vertex>> {
     match edge_name {
         "parent" => method_call::parent(contexts, resolve_info, adapter),
+        "receiver" => method_call::receiver(contexts, resolve_info, adapter),
         "type" => method_call::type_(contexts, resolve_info, adapter),
         _ => {
             unreachable!(
@@ -615,14 +626,15 @@ pub(super) fn resolve_method_call_edge<'a, V: AsVertex<Vertex> + 'a>(
 }
 
 mod method_call {
+    use rustc_hir::ExprKind;
     use trustfall::provider::{
         AsVertex, ContextIterator, ContextOutcomeIterator,
-        ResolveEdgeInfo, VertexIterator,
+        ResolveEdgeInfo, VertexIterator, resolve_neighbors_with,
     };
 
     use crate::adapter::Adapter;
 
-    use super::super::vertex::Vertex;
+    use super::{super::vertex::Vertex, util::expr_to_vertex};
 
     pub(super) fn parent<'a, V: AsVertex<Vertex> + 'a>(
         contexts: ContextIterator<'a, V>,
@@ -638,6 +650,30 @@ mod method_call {
         adapter: &'a Adapter,
     ) -> ContextOutcomeIterator<'a, V, VertexIterator<'a, Vertex>> {
         super::expr::type_(contexts, _resolve_info, adapter)
+    }
+
+    pub(super) fn receiver<'a, V: AsVertex<Vertex> + 'a>(
+        contexts: ContextIterator<'a, V>,
+        _resolve_info: &ResolveEdgeInfo,
+        adapter: &'a Adapter
+    ) -> ContextOutcomeIterator<'a, V, VertexIterator<'a, Vertex>> {
+        resolve_neighbors_with(
+            contexts,
+            move |vertex| {
+                let hir_id = vertex
+                    .hir_id()
+                    .expect("conversion failed, vertex was not a Node");
+                let expr = adapter.queries.global_ctxt().unwrap().enter(move |ctxt| {
+                    let hir = ctxt.hir();
+                    let expr = hir.expect_expr(hir_id);
+                    let ExprKind::MethodCall(_, receiver, .. ) = expr.kind else {
+                        unimplemented!("{expr:#?} is not a MethodCall")
+                    };
+                    expr_to_vertex(receiver)
+                });
+                Box::new(std::iter::once(expr))
+            },
+        )
     }
 }
 

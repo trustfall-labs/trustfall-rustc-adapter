@@ -163,6 +163,8 @@ type MethodCall implements Expr & Node {
     parent: Node
     inside_const_context: Boolean!
 
+    receiver: Expr!
+
     type: Ty
 }
 

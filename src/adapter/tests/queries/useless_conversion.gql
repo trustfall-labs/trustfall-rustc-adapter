@@ -1,0 +1,19 @@
+query {
+	Crate {
+		expr {
+			... on MethodCall {
+				receiver {
+					type {
+						receiver_type: as_string @output @tag(name: "receiver")
+					}
+				}
+				type {
+					into_type: as_string @output @filter(op: "=", value: ["%receiver"])
+					def {
+						path @output @filter(op: "one_of", value: ["$methods"])
+					}
+				}
+			}
+		}
+	}
+}
