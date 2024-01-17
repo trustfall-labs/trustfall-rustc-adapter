@@ -7,8 +7,6 @@ This [Trustfall](https://github.com/obi1kenobi/trustfall/) adapter aims to make 
 ### Interesting Queries to Implement
 
 - "what is the MSRV of this piece of code?"
-    - look for instances of `stable` and `const_stable`
-    - consider looking for 
 - "where is this function called?"
 - recreate some Clippy lints
 
