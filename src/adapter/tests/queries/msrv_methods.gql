@@ -1,0 +1,27 @@
+query {
+    Crate {
+        expr {
+            ... on MethodCall {
+                inside_const_context @output
+                type {
+                    def {
+                        ident @output
+                        path @output
+                        stability @optional {
+                            feature @output
+                            stable @output
+                            since @output
+                            reason @output
+                        }
+                        const_: const_stability @optional {
+                            feature @output
+                            stable @output
+                            since @output
+                            reason @output
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

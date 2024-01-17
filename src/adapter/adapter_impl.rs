@@ -2,18 +2,18 @@ use std::sync::{Arc, OnceLock};
 
 use trustfall::{FieldValue, Schema, provider::{AsVertex, ContextIterator, ContextOutcomeIterator, EdgeParameters, ResolveEdgeInfo, ResolveInfo, Typename, VertexIterator, resolve_coercion_using_schema, resolve_property_with}};
 
-use crate::compiler_config::CompilerConfig;
+use rustc_interface::Queries;
 
-use super::vertex::Vertex;
+use super::{vertex::Vertex, util::is_subtype};
 
 static SCHEMA: OnceLock<Schema> = OnceLock::new();
 
 #[non_exhaustive]
-pub struct Adapter {
-    pub(crate) config: CompilerConfig
+pub struct Adapter<'a> {
+    pub(crate) queries: &'a Queries<'a>
 }
 
-impl Adapter {
+impl<'a> Adapter<'a> {
     pub const SCHEMA_TEXT: &'static str = include_str!("./schema.graphql");
 
     pub fn schema() -> &'static Schema {
@@ -23,12 +23,12 @@ impl Adapter {
             })
     }
 
-    pub fn new(config: CompilerConfig) -> Self {
-        Self { config: config }
+    pub fn new(queries: &'a Queries<'a>) -> Self {
+        Self { queries }
     }
 }
 
-impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
+impl<'a, 'b> trustfall::provider::Adapter<'a> for &'a Adapter<'b> {
     type Vertex = Vertex;
 
     fn resolve_starting_vertices(
@@ -56,8 +56,34 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
     ) -> ContextOutcomeIterator<'a, V, FieldValue> {
         if property_name.as_ref() == "__typename" {
             return resolve_property_with(contexts, |vertex| vertex.typename().into());
+        } else if is_subtype(Adapter::schema(), "Node", type_name) {
+            match property_name.as_ref() {
+                "inside_const_context" => {
+                    return super::properties::resolve_inside_const_context_property(
+                        contexts,
+                        property_name.as_ref(),
+                        resolve_info,
+                        self,
+                    );
+                }
+                _ => {}
+            }
         }
         match type_name.as_ref() {
+            "ConstStability" => {
+                super::properties::resolve_const_stability_property(
+                    contexts,
+                    property_name.as_ref(),
+                    resolve_info,
+                    self,
+                )
+            }
+            "Def" => super::properties::resolve_def_property(
+                contexts,
+                property_name.as_ref(),
+                resolve_info,
+                self,
+            ),
             "Fn" => {
                 super::properties::resolve_fn_property(
                     contexts,
@@ -68,6 +94,22 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
             }
             "Item" => {
                 super::properties::resolve_item_property(
+                    contexts,
+                    property_name.as_ref(),
+                    resolve_info,
+                    self,
+                )
+            }
+            "Node" => {
+                super::properties::resolve_node_property(
+                    contexts,
+                    property_name.as_ref(),
+                    resolve_info,
+                    self,
+                )
+            }
+            "Stability" => {
+                super::properties::resolve_stability_property(
                     contexts,
                     property_name.as_ref(),
                     resolve_info,
@@ -126,6 +168,15 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     self,
                 )
             }
+            "Def" => {
+                super::edges::resolve_def_edge(
+                    contexts,
+                    edge_name.as_ref(),
+                    parameters,
+                    resolve_info,
+                    self,
+                )
+            }
             "Expr" => {
                 super::edges::resolve_expr_edge(
                     contexts,
@@ -171,6 +222,15 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
                     self,
                 )
             }
+            "MethodCall" => {
+                super::edges::resolve_method_call_edge(
+                    contexts,
+                    edge_name.as_ref(),
+                    parameters,
+                    resolve_info,
+                    self,
+                )
+            }
             "Node" => {
                 super::edges::resolve_node_edge(
                     contexts,
@@ -182,6 +242,15 @@ impl<'a> trustfall::provider::Adapter<'a> for &'a Adapter {
             }
             "Statement" => {
                 super::edges::resolve_statement_edge(
+                    contexts,
+                    edge_name.as_ref(),
+                    parameters,
+                    resolve_info,
+                    self,
+                )
+            }
+            "Ty" => {
+                super::edges::resolve_ty_edge(
                     contexts,
                     edge_name.as_ref(),
                     parameters,

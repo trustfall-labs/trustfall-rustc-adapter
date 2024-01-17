@@ -19,6 +19,10 @@ type Crate {
     https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.items
     """
     item: [Item!]!
+    """
+    A walk of all Expr nodes in this crate.
+    """
+    expr: [Expr!]!
 }
 
 """
@@ -29,6 +33,11 @@ interface Node {
     https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.find_parent
     """
     parent: Node
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/hir/map/struct.Map.html#method.is_inside_const_context
+    """
+    inside_const_context: Boolean!
 }
 
 
@@ -40,6 +49,7 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/enum.ItemKind.html
 interface Item implements Node {
     parent: Node
     ident: String!
+    inside_const_context: Boolean!
 }
 
 """
@@ -49,6 +59,7 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/struct.FnSig.html
 type Fn implements Item & Node {
     parent: Node
     ident: String!
+    inside_const_context: Boolean!
 
     body: FnBody!
 }
@@ -59,6 +70,7 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/struct.Body.html
 """
 interface Body implements Node {
     parent: Node
+    inside_const_context: Boolean!
 
     """
     https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/struct.Body.html#structfield.value
@@ -72,11 +84,9 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/enum.ExprKind.html
 """
 interface Expr implements Node {
     parent: Node
-    
-    """
-    NOTE: This will require finding the closest parent DefId
-    (HirId::expect_owner().to_def_id()) to this node and passing that to `typeck`.
+    inside_const_context: Boolean!
 
+    """
     https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/ty/struct.TyCtxt.html#method.typeck
     https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/ty/typeck_results/struct.TypeckResults.html#method.node_type
     """
@@ -88,6 +98,7 @@ We have no reason to believe that a Fn's body will ever not be a block.
 """
 interface FnBody implements Body & Node {
     parent: Node
+    inside_const_context: Boolean!
     
     value: Block!
 }
@@ -98,6 +109,7 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/struct.Block.html
 """
 type Block implements Expr & Node {
     parent: Node
+    inside_const_context: Boolean!
 
     type: Ty
     
@@ -114,6 +126,7 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/enum.StmtKind.html
 """
 interface Statement implements Node {
     parent: Node
+    inside_const_context: Boolean!
 }
 
 """
@@ -122,6 +135,7 @@ https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/struct.Local.html
 """
 type LocalStatement implements Statement & Node {
     parent: Node
+    inside_const_context: Boolean!
     
     """
     https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/struct.Local.html#structfield.init
@@ -135,4 +149,166 @@ interface Ty {
     https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/ty/sty/type.TyKind.html
     """
     as_string: String!
+    
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/ty/struct.TypeckResults.html#method.type_dependent_def_id
+    """
+    def: Def
+}
+
+"""
+https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/enum.ExprKind.html#variant.MethodCall
+"""
+type MethodCall implements Expr & Node {
+    parent: Node
+    inside_const_context: Boolean!
+
+    type: Ty
+}
+
+"""
+https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/def_id/struct.DefId.html
+"""
+type Def {
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/ty/context/struct.TyCtxt.html#method.lookup_stability
+    """
+    stability: Stability
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/ty/context/struct.TyCtxt.html#method.lookup_const_stability
+    """
+    const_stability: ConstStability
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/ty/context/struct.TyCtxt.html#method.opt_item_ident
+    """
+    ident: String
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_middle/ty/context/struct.TyCtxt.html#method.def_path_str
+    """
+    path: String!
+}
+
+"""
+TODO: Unflatten StabilityLevel props
+
+https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/struct.Stability.html
+https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html
+"""
+type Stability {
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/struct.Stability.html#structfield.feature
+    """
+    feature: String!
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#method.is_stable
+    """
+    stable: Boolean!
+
+    """
+    Reason for the current stability level.
+
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Unstable.field.reason
+    """
+    reason: String
+
+    """
+    Relevant rust-lang/rust issue.
+
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Unstable.field.issue
+    """
+    issue: Int
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Unstable.field.is_soft
+    """
+    soft: Boolean
+
+    """
+    If part of a feature is stabilized and a new feature is added for the remaining parts, then the `implied_by` attribute is used to indicate which now-stable feature previously contained an item.
+    
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Unstable.field.implied_by
+    """
+    implied_by: String
+
+    """
+    Rust release which stabilized this feature.
+    
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Stable.field.since
+    """
+    since: String
+
+    """
+    Is this item allowed to be referred to on stable, despite being contained in unstable modules?
+    
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Stable.field.allowed_through_unstable_modules
+    """
+    allowed_through_unstable_modules: Boolean
+}
+
+"""
+TODO: Unflatten StabilityLevel props
+
+https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/struct.ConstStability.html
+https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html
+"""
+type ConstStability {
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/struct.ConstStability.html#structfield.feature
+    """
+    feature: String!
+
+    """
+    Whether the function has a #[rustc_promotable] attribute.
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/struct.ConstStability.html#structfield.promotable
+    """
+    promotable: Boolean!
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#method.is_stable
+    """
+    stable: Boolean!
+
+    """
+    Reason for the current stability level.
+
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Unstable.field.reason
+    """
+    reason: String
+
+    """
+    Relevant rust-lang/rust issue.
+
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Unstable.field.issue
+    """
+    issue: Int
+
+    """
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Unstable.field.is_soft
+    """
+    soft: Boolean
+
+    """
+    If part of a feature is stabilized and a new feature is added for the remaining parts, then the `implied_by` attribute is used to indicate which now-stable feature previously contained an item.
+    
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Unstable.field.implied_by
+    """
+    implied_by: String
+
+    """
+    Rust release which stabilized this feature.
+    
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Stable.field.since
+    """
+    since: String
+
+    """
+    Is this item allowed to be referred to on stable, despite being contained in unstable modules?
+    
+    https://doc.rust-lang.org/nightly/nightly-rustc/rustc_attr/builtin/enum.StabilityLevel.html#variant.Stable.field.allowed_through_unstable_modules
+    """
+    allowed_through_unstable_modules: Boolean
 }
